@@ -1,0 +1,66 @@
+{
+  "products": [
+    {
+      "name": "WebYes Accessibility",
+      "keywords": ["webyes accessibility", "WebYes Accessibility", "accessibility", "WA"],
+      "url": "https://accessibility.staging.webyes.com",
+      "loginPath": "/login",
+      "credentials": {
+        "usernameSelector": "#email",
+        "passwordSelector": "#password",
+        "submitSelector": "button[aria-label='Log in']",
+        "username": "docu.aaii@gmail.com",
+        "password": "Mozilor@2026"
+      },
+      "pages": {
+        "Dashboard": "/dashboard",
+        "Affected Pages": "/dashboard/affected-pages/accessibility",
+        "Issue List": "/dashboard/issueList/accessibility",
+        "Checklist": "/dashboard/check-list/accessibility"
+      },
+      "confluenceSpaceKey": "~7120206f8ba21555114eb4a1099b75ed131c59",
+      "confluenceArticleId": "205094915",
+      "confluenceParentId": "533069825",
+      "styleSampleIds": ["213024786", "222625805"],
+      "jiraProjectKey": "CM",
+      "jiraAssigneeAccountId": "712020:6f8ba21555114eb4a1099b75ed131c59",
+      "creatorEmail": ["sidharth@mozilor.com", "saftwana.ta@mozilor.com"]
+    },
+    {
+      "name": "WebYes",
+      "keywords": ["webyes", "WebYes", "WY"],
+      "url": "https://app.staging.webyes.com",
+      "loginPath": "/login",
+      "credentials": {
+        "usernameSelector": "#email",
+        "passwordSelector": "#password",
+        "submitSelector": "button[aria-label='Log in']",
+        "username": "docu.aaii@gmail.com",
+        "password": "Mozilor@2026"
+      },
+      "pages": {
+        "Dashboard": "/",
+        "Accessibility Dashboard": "/dashboard/accessibility",
+        "Accessibility Affected Pages": "/dashboard/affected-pages/accessibility",
+        "Accessibility Issue List": "/dashboard/issueList/accessibility",
+        "Accessibility Checklist": "/dashboard/check-list/accessibility",
+        "Performance Dashboard": "/dashboard/performance",
+        "Performance Affected Pages": "/dashboard/affected-pages/performance",
+        "Performance Issue List": "/dashboard/issueList/performance",
+        "Quality Dashboard": "/dashboard/quality",
+        "Quality Affected Pages": "/dashboard/affected-pages/quality",
+        "Quality Issue List": "/dashboard/issueList/quality",
+        "SEO Dashboard": "/dashboard/seo",
+        "SEO Affected Pages": "/dashboard/affected-pages/seo",
+        "SEO Issue List": "/dashboard/issueList/seo"
+      },
+      "confluenceSpaceKey": "~7120206f8ba21555114eb4a1099b75ed131c59",
+      "confluenceArticleId": "296681475",
+      "confluenceParentId": "533069825",
+      "styleSampleIds": ["199131405", "453378049", "368017409", "458489859", "181927969"],
+      "jiraProjectKey": "CM",
+      "jiraAssigneeAccountId": "712020:6f8ba21555114eb4a1099b75ed131c59",
+      "creatorEmail": ["sidharth@mozilor.com", "saftwana.ta@mozilor.com"]
+    }
+  ]
+}

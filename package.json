@@ -1,0 +1,26 @@
+{
+  "name": "docu-ai",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "jest --passWithNoTests"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.82.0",
+    "@slack/bolt": "^4.6.0",
+    "axios": "^1.14.0",
+    "diff": "^8.0.4",
+    "dotenv": "^17.4.1",
+    "form-data": "^4.0.5",
+    "nodemailer": "^8.0.4",
+    "playwright": "^1.59.1"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}
