@@ -1,0 +1,34 @@
+services:
+  - type: web
+    name: docu-ai
+    env: node
+    buildCommand: npm install && npx playwright install chromium --with-deps
+    startCommand: node index.js
+    healthCheckPath: /
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: SLACK_BOT_TOKEN
+        sync: false
+      - key: SLACK_APP_TOKEN
+        sync: false
+      - key: SLACK_RELEASES_CHANNEL
+        sync: false
+      - key: SLACK_NOTIFICATIONS_CHANNEL
+        sync: false
+      - key: CONFLUENCE_BASE_URL
+        sync: false
+      - key: CONFLUENCE_EMAIL
+        sync: false
+      - key: CONFLUENCE_API_TOKEN
+        sync: false
+      - key: JIRA_BASE_URL
+        sync: false
+      - key: JIRA_EMAIL
+        sync: false
+      - key: JIRA_API_TOKEN
+        sync: false
+      - key: PLAYWRIGHT_USERNAME
+        sync: false
+      - key: PLAYWRIGHT_PASSWORD
+        sync: false

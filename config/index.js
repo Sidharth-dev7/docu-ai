@@ -1,5 +1,12 @@
 // docu-ai/config/index.js
-const products = require('./products.json').products;
+const products = require('./products.json').products.map(p => ({
+  ...p,
+  credentials: {
+    ...p.credentials,
+    username: process.env.PLAYWRIGHT_USERNAME || p.credentials.username,
+    password: process.env.PLAYWRIGHT_PASSWORD || p.credentials.password,
+  },
+}));
 
 function getProductByName(name) {
   const lower = name.toLowerCase();

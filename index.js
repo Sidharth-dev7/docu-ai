@@ -1,5 +1,6 @@
 // docu-ai/index.js
 require('dotenv').config();
+const http = require('http');
 const { App } = require('@slack/bolt');
 const { createSlackService } = require('./services/slack');
 const { createReleaseHandler } = require('./handlers/release');
@@ -8,7 +9,8 @@ const { interpretAnnouncement } = require('./services/claude');
 
 const app = new App({
   token: process.env.SLACK_BOT_TOKEN,
-  signingSecret: process.env.SLACK_SIGNING_SECRET,
+  appToken: process.env.SLACK_APP_TOKEN,
+  socketMode: true,
 });
 
 const slackService = createSlackService(app.client);
@@ -118,6 +120,9 @@ app.message(async ({ message }) => {
 });
 
 (async () => {
-  await app.start(process.env.PORT || 3000);
-  console.log('[Docu AI] Bot is running on port', process.env.PORT || 3000);
+  await app.start();
+  // Minimal HTTP server for Render health checks
+  http.createServer((req, res) => { res.writeHead(200); res.end('ok'); })
+    .listen(process.env.PORT || 3000);
+  console.log('[Docu AI] Bot is running');
 })();

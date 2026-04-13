@@ -9,8 +9,8 @@
         "usernameSelector": "#email",
         "passwordSelector": "#password",
         "submitSelector": "button[aria-label='Log in']",
-        "username": "docu.aaii@gmail.com",
-        "password": "Mozilor@2026"
+        "username": "",
+        "password": ""
       },
       "pages": {
         "Dashboard": "/dashboard",
@@ -35,8 +35,8 @@
         "usernameSelector": "#email",
         "passwordSelector": "#password",
         "submitSelector": "button[aria-label='Log in']",
-        "username": "docu.aaii@gmail.com",
-        "password": "Mozilor@2026"
+        "username": "",
+        "password": ""
       },
       "pages": {
         "Dashboard": "/",
