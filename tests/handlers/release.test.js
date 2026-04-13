@@ -58,6 +58,7 @@ test('runs full pipeline for a valid release message', async () => {
   expect(confluence.createDraftPage).toHaveBeenCalled();
   expect(jira.createTask).toHaveBeenCalled();
   expect(mockSlack.postDraftNotification).toHaveBeenCalled();
+  expect(mockSlack.postAlert).not.toHaveBeenCalled();
 });
 
 test('continues pipeline if screenshot capture fails', async () => {
@@ -78,9 +79,9 @@ test('continues pipeline and sends Slack notification if Jira fails', async () =
   }));
 });
 
-test('continues pipeline and sends Slack notification if email fails', async () => {
-  email.sendDraftEmail.mockRejectedValue(new Error('SMTP error'));
+test('does not call email (email step is currently disabled)', async () => {
   await handler('Product A v2.1.0 released — updated Settings', NOTIFICATIONS_CHANNEL, fakeProduct, FAKE_VERSION, FAKE_PAGES);
+  expect(email.sendDraftEmail).not.toHaveBeenCalled();
   expect(mockSlack.postDraftNotification).toHaveBeenCalled();
 });
 

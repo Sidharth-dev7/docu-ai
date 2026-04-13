@@ -1,19 +1,15 @@
 // docu-ai/tests/services/claude.test.js
+let mockCreate;
 jest.mock('@anthropic-ai/sdk', () => {
+  mockCreate = jest.fn();
   return jest.fn().mockImplementation(() => ({
-    messages: {
-      create: jest.fn(),
-    },
+    messages: { create: mockCreate },
   }));
 });
 
-const Anthropic = require('@anthropic-ai/sdk');
 const { interpretAnnouncement, generateDraft } = require('../../services/claude');
 
-let mockCreate;
-
 beforeEach(() => {
-  mockCreate = Anthropic.mock.results[0].value.messages.create;
   mockCreate.mockReset();
 });
 
@@ -133,7 +129,7 @@ test('generateDraft returns title and content string', async () => {
     version: '2.1.0',
   });
 
-  expect(result.title).toContain('Product A');
+  expect(result.title).toBe('Product A v2.1.0 — Draft (Docu AI)');
   expect(typeof result.content).toBe('string');
   expect(result.content.length).toBeGreaterThan(0);
 });
