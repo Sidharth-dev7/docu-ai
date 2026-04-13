@@ -91,7 +91,23 @@ app.message(async ({ message }) => {
       }
     };
 
-    await handleRelease(messageText, NOTIFICATIONS_CHANNEL, productConfig, interpretation.version, interpretation.affectedPages, interpretation.bugFixes, reportProgress);
+    let pipelineFailed = false;
+    try {
+      await handleRelease(messageText, NOTIFICATIONS_CHANNEL, productConfig, interpretation.version, interpretation.affectedPages, interpretation.bugFixes, reportProgress);
+    } catch (err) {
+      pipelineFailed = true;
+      throw err;
+    } finally {
+      if (pipelineFailed && progressTs) {
+        try {
+          await app.client.chat.update({
+            channel: NOTIFICATIONS_CHANNEL,
+            ts: progressTs,
+            text: `*Docu AI* · draft generation failed for *${interpretation.product} v${interpretation.version}* — see alert below`,
+          });
+        } catch {}
+      }
+    }
   } catch (err) {
     console.error('[Docu AI] Pipeline error:', err);
     await slackService.postAlert({

@@ -34,6 +34,7 @@ function createReleaseHandler(slackService) {
 
     // Step 1: Screenshot capture (non-fatal — pipeline continues on failure)
     let screenshots = [];
+    try { await reportProgress('Capturing screenshots'); } catch {}
     try {
       screenshots = await captureScreenshots(config, affectedPages);
     } catch (err) {
@@ -42,9 +43,9 @@ function createReleaseHandler(slackService) {
         message: `screenshot capture failed for ${config.name} v${version}: ${err.message}. Draft will be created without screenshots.`,
       });
     }
-    try { await reportProgress('Screenshots captured'); } catch {}
 
     // Step 2: Fetch existing article and style samples
+    try { await reportProgress('Fetching Confluence article'); } catch {}
     let existingArticle, styleSamples;
     try {
       existingArticle = await fetchArticle(config.confluenceArticleId);
@@ -56,9 +57,9 @@ function createReleaseHandler(slackService) {
     } catch (err) {
       throw new Error(`Failed to fetch Confluence style samples: ${err.message}`);
     }
-    try { await reportProgress('Confluence article fetched'); } catch {}
 
     // Step 3: Generate new draft content
+    try { await reportProgress('Generating draft'); } catch {}
     let draft;
     try {
       const stripHtml = html => html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
@@ -77,12 +78,12 @@ function createReleaseHandler(slackService) {
     } catch (err) {
       throw new Error(`Failed to generate draft via Claude: ${err.message}`);
     }
-    try { await reportProgress('Draft generated'); } catch {}
 
     // Step 4: Claude returns Confluence HTML with highlights and screenshots placed inline
     const highlightedContent = draft.content;
 
     // Step 5: Create Confluence draft page
+    try { await reportProgress('Creating Confluence page'); } catch {}
     const timestamp = new Date().toISOString().slice(0, 16).replace('T', ' ');
     const draftPage = await createDraftPage({
       spaceKey: config.confluenceSpaceKey,
@@ -90,9 +91,9 @@ function createReleaseHandler(slackService) {
       title: `${draft.title} (${timestamp})`,
       content: highlightedContent,
     });
-    try { await reportProgress('Confluence page created'); } catch {}
 
     // Step 6: Upload screenshots as attachments (non-fatal)
+    try { await reportProgress('Uploading attachments'); } catch {}
     for (const screenshot of screenshots) {
       try {
         const buffer = Buffer.from(screenshot.base64, 'base64');
@@ -104,9 +105,9 @@ function createReleaseHandler(slackService) {
         });
       }
     }
-    try { await reportProgress('Attachments uploaded'); } catch {}
 
     // Step 7: Create Jira task (non-fatal)
+    try { await reportProgress('Creating Jira task'); } catch {}
     try {
       await createTask({
         productName: config.name,
@@ -121,7 +122,6 @@ function createReleaseHandler(slackService) {
         message: `Jira task creation failed for ${config.name} v${version}: ${err.message}. Draft is at ${draftPage.url}`,
       });
     }
-    try { await reportProgress('Jira task created'); } catch {}
 
     // Step 8: Send email (skipped for now)
     if (false) try {

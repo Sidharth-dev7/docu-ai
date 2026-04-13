@@ -96,12 +96,12 @@ test('bubbles up error if Confluence page creation fails', async () => {
 test('calls reportProgress for each pipeline step', async () => {
   const reportProgress = jest.fn().mockResolvedValue();
   await handler('Product A v2.1.0 released — updated Settings', NOTIFICATIONS_CHANNEL, fakeProduct, FAKE_VERSION, FAKE_PAGES_ENRICHED, [], reportProgress);
-  expect(reportProgress).toHaveBeenCalledWith('Screenshots captured');
-  expect(reportProgress).toHaveBeenCalledWith('Confluence article fetched');
-  expect(reportProgress).toHaveBeenCalledWith('Draft generated');
-  expect(reportProgress).toHaveBeenCalledWith('Confluence page created');
-  expect(reportProgress).toHaveBeenCalledWith('Attachments uploaded');
-  expect(reportProgress).toHaveBeenCalledWith('Jira task created');
+  expect(reportProgress).toHaveBeenCalledWith('Capturing screenshots');
+  expect(reportProgress).toHaveBeenCalledWith('Fetching Confluence article');
+  expect(reportProgress).toHaveBeenCalledWith('Generating draft');
+  expect(reportProgress).toHaveBeenCalledWith('Creating Confluence page');
+  expect(reportProgress).toHaveBeenCalledWith('Uploading attachments');
+  expect(reportProgress).toHaveBeenCalledWith('Creating Jira task');
   expect(reportProgress).toHaveBeenCalledWith('Done');
   expect(reportProgress).toHaveBeenCalledTimes(7);
 });
