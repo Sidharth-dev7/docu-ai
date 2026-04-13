@@ -20,9 +20,17 @@ function createReleaseHandler(slackService) {
    * @param {Object} productConfig - Pre-resolved product config from config/products.json
    * @param {string} version - Version string extracted from the announcement (e.g. "2.1.0")
    * @param {Array<{name, path}>} affectedPages - Pages to screenshot, resolved by interpretAnnouncement
+   * @param {Array<string>} bugFixes - Bug fix descriptions to include in the notification
+   * @param {Function} reportProgress - Optional callback(stepLabel) for live progress updates
    */
-  async function handleRelease(messageText, notificationsChannel, productConfig, version, affectedPages, bugFixes = []) {
+  async function handleRelease(messageText, notificationsChannel, productConfig, version, affectedPages, bugFixes = [], reportProgress = () => {}) {
     const config = productConfig;
+
+    affectedPages = affectedPages.map(p =>
+      typeof p === 'string'
+        ? { name: p, path: '', changeType: 'design_change', changeDescription: '' }
+        : p
+    );
 
     // Step 1: Screenshot capture (non-fatal — pipeline continues on failure)
     let screenshots = [];
@@ -34,6 +42,7 @@ function createReleaseHandler(slackService) {
         message: `screenshot capture failed for ${config.name} v${version}: ${err.message}. Draft will be created without screenshots.`,
       });
     }
+    reportProgress('Screenshots captured');
 
     // Step 2: Fetch existing article and style samples
     let existingArticle, styleSamples;
@@ -47,6 +56,7 @@ function createReleaseHandler(slackService) {
     } catch (err) {
       throw new Error(`Failed to fetch Confluence style samples: ${err.message}`);
     }
+    reportProgress('Confluence article fetched');
 
     // Step 3: Generate new draft content
     let draft;
@@ -67,6 +77,7 @@ function createReleaseHandler(slackService) {
     } catch (err) {
       throw new Error(`Failed to generate draft via Claude: ${err.message}`);
     }
+    reportProgress('Draft generated');
 
     // Step 4: Claude returns Confluence HTML with highlights and screenshots placed inline
     const highlightedContent = draft.content;
@@ -79,6 +90,7 @@ function createReleaseHandler(slackService) {
       title: `${draft.title} (${timestamp})`,
       content: highlightedContent,
     });
+    reportProgress('Confluence page created');
 
     // Step 6: Upload screenshots as attachments (non-fatal)
     for (const screenshot of screenshots) {
@@ -92,6 +104,7 @@ function createReleaseHandler(slackService) {
         });
       }
     }
+    reportProgress('Attachments uploaded');
 
     // Step 7: Create Jira task (non-fatal)
     try {
@@ -108,6 +121,7 @@ function createReleaseHandler(slackService) {
         message: `Jira task creation failed for ${config.name} v${version}: ${err.message}. Draft is at ${draftPage.url}`,
       });
     }
+    reportProgress('Jira task created');
 
     // Step 8: Send email (skipped for now)
     if (false) try {
@@ -123,6 +137,7 @@ function createReleaseHandler(slackService) {
     }
 
     // Step 9: Slack notification (always last)
+    reportProgress('Done');
     await slackService.postDraftNotification({
       channel: notificationsChannel,
       productName: config.name,

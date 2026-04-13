@@ -61,7 +61,31 @@ app.message(async ({ message }) => {
       return;
     }
 
-    await handleRelease(messageText, NOTIFICATIONS_CHANNEL, productConfig, interpretation.version, interpretation.affectedPages, interpretation.bugFixes);
+    const progressMsg = await app.client.chat.postMessage({
+      channel: NOTIFICATIONS_CHANNEL,
+      text: `*Docu AI* · preparing draft for *${interpretation.product} v${interpretation.version}*\n⏳  Starting pipeline...`,
+    });
+    const progressTs = progressMsg.ts;
+
+    const completedSteps = [];
+    const reportProgress = async (stepLabel) => {
+      try {
+        completedSteps.push(stepLabel);
+        const stepLines = completedSteps.slice(0, -1).map(s => `✅  ${s}`).join('\n');
+        const currentLine = stepLabel === 'Done'
+          ? `✅  ${stepLabel}`
+          : `${stepLines ? stepLines + '\n' : ''}⏳  ${stepLabel}...`;
+        await app.client.chat.update({
+          channel: NOTIFICATIONS_CHANNEL,
+          ts: progressTs,
+          text: `*Docu AI* · preparing draft for *${interpretation.product} v${interpretation.version}*\n${stepLabel === 'Done' ? completedSteps.map(s => `✅  ${s}`).join('\n') : currentLine}`,
+        });
+      } catch (err) {
+        console.warn('[Docu AI] Progress update failed (non-fatal):', err.message);
+      }
+    };
+
+    await handleRelease(messageText, NOTIFICATIONS_CHANNEL, productConfig, interpretation.version, interpretation.affectedPages, interpretation.bugFixes, reportProgress);
   } catch (err) {
     console.error('[Docu AI] Pipeline error:', err);
     await slackService.postAlert({
