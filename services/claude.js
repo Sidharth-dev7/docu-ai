@@ -73,14 +73,15 @@ For changeDescription: one concise sentence describing what changed on that spec
     const raw = response.content[0].text.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
     parsed = JSON.parse(raw);
   } catch {
-    console.log('[Docu AI] JSON parse failed');
+    console.error('[Docu AI] JSON parse failed');
     return null;
   }
 
   if (!parsed.product) return null;
-  parsed.releaseType = parsed.releaseType || 'feature';
+  const VALID_RELEASE_TYPES = ['bugfix_only', 'feature'];
+  parsed.releaseType = VALID_RELEASE_TYPES.includes(parsed.releaseType) ? parsed.releaseType : 'feature';
   parsed.bugFixes = Array.isArray(parsed.bugFixes) ? parsed.bugFixes : [];
-  parsed.affectedPages = (parsed.affectedPages || []).map(p =>
+  parsed.affectedPages = (Array.isArray(parsed.affectedPages) ? parsed.affectedPages : []).map(p =>
     typeof p === 'string'
       ? { name: p, path: '', changeType: 'design_change', changeDescription: '' }
       : { changeType: 'design_change', changeDescription: '', ...p }
@@ -107,7 +108,7 @@ async function generateDraft({ releaseText, existingContent, styleSamples, scree
     .join('\n\n');
 
   const pagesContext = affectedPages.map(p =>
-    `${p.name} (${p.changeType === 'new_feature' ? 'new feature' : 'design change'}: ${p.changeDescription || 'no description'})`
+    `${p.name} (${p.changeType === 'new_feature' ? 'new feature' : 'design change'}: ${p.changeDescription || ''})`
   ).join(', ');
 
   const imageContent = screenshotBase64s.map(b64 => ({
@@ -135,8 +136,7 @@ Writing style samples from this team (follow this style closely):
 ${styleContext}
 
 ${screenshotBase64s.length > 0 ? `The attached screenshots show the updated UI for the pages listed below.
-Where the existing article has images or where updated UI is described, embed the relevant screenshot inline using this Confluence macro (replace FILENAME with the actual filename):
-<ac:image><ri:attachment ri:filename="FILENAME"/></ac:image>
+Where the existing article has images or where updated UI is described, embed the relevant screenshot inline.
 Place each screenshot immediately after the section that describes that page/feature. If the existing article already had a screenshot in that location, replace it with the new one.
 Use this exact macro format with width ${imageWidth}: <ac:image ac:width="${imageWidth}"><ri:attachment ri:filename="FILENAME"/></ac:image>
 
