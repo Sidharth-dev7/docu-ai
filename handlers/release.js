@@ -42,7 +42,7 @@ function createReleaseHandler(slackService) {
         message: `screenshot capture failed for ${config.name} v${version}: ${err.message}. Draft will be created without screenshots.`,
       });
     }
-    reportProgress('Screenshots captured');
+    await reportProgress('Screenshots captured');
 
     // Step 2: Fetch existing article and style samples
     let existingArticle, styleSamples;
@@ -56,7 +56,7 @@ function createReleaseHandler(slackService) {
     } catch (err) {
       throw new Error(`Failed to fetch Confluence style samples: ${err.message}`);
     }
-    reportProgress('Confluence article fetched');
+    await reportProgress('Confluence article fetched');
 
     // Step 3: Generate new draft content
     let draft;
@@ -77,7 +77,7 @@ function createReleaseHandler(slackService) {
     } catch (err) {
       throw new Error(`Failed to generate draft via Claude: ${err.message}`);
     }
-    reportProgress('Draft generated');
+    await reportProgress('Draft generated');
 
     // Step 4: Claude returns Confluence HTML with highlights and screenshots placed inline
     const highlightedContent = draft.content;
@@ -90,7 +90,7 @@ function createReleaseHandler(slackService) {
       title: `${draft.title} (${timestamp})`,
       content: highlightedContent,
     });
-    reportProgress('Confluence page created');
+    await reportProgress('Confluence page created');
 
     // Step 6: Upload screenshots as attachments (non-fatal)
     for (const screenshot of screenshots) {
@@ -104,7 +104,7 @@ function createReleaseHandler(slackService) {
         });
       }
     }
-    reportProgress('Attachments uploaded');
+    await reportProgress('Attachments uploaded');
 
     // Step 7: Create Jira task (non-fatal)
     try {
@@ -121,7 +121,7 @@ function createReleaseHandler(slackService) {
         message: `Jira task creation failed for ${config.name} v${version}: ${err.message}. Draft is at ${draftPage.url}`,
       });
     }
-    reportProgress('Jira task created');
+    await reportProgress('Jira task created');
 
     // Step 8: Send email (skipped for now)
     if (false) try {
@@ -137,7 +137,6 @@ function createReleaseHandler(slackService) {
     }
 
     // Step 9: Slack notification (always last)
-    reportProgress('Done');
     await slackService.postDraftNotification({
       channel: notificationsChannel,
       productName: config.name,
@@ -145,6 +144,7 @@ function createReleaseHandler(slackService) {
       confluenceUrl: draftPage.url,
       bugFixes,
     });
+    await reportProgress('Done');
   }
 
   return handleRelease;
