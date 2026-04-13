@@ -26,6 +26,7 @@ async function createTask({ productName, version, confluenceUrl, projectKey, ass
         }],
       },
       issuetype: { name: 'Asset' },
+      assignee: { accountId: assigneeAccountId },
     },
   };
 

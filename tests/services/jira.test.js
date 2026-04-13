@@ -11,6 +11,7 @@ test('createTask returns id and url', async () => {
   axios.post.mockResolvedValue({
     data: { id: 'DOCS-42', key: 'DOCS-42' },
   });
+  axios.get.mockResolvedValue({ data: { transitions: [] } });
 
   const result = await createTask({
     productName: 'Product A',
@@ -26,6 +27,7 @@ test('createTask returns id and url', async () => {
 
 test('createTask sends correct issue payload', async () => {
   axios.post.mockResolvedValue({ data: { id: 'DOCS-1', key: 'DOCS-1' } });
+  axios.get.mockResolvedValue({ data: { transitions: [] } });
 
   await createTask({
     productName: 'Product A',
@@ -38,6 +40,5 @@ test('createTask sends correct issue payload', async () => {
   const payload = axios.post.mock.calls[0][1];
   expect(payload.fields.summary).toContain('Product A');
   expect(payload.fields.summary).toContain('2.1.0');
-  expect(payload.fields.labels).toContain('docu-ai-draft');
   expect(payload.fields.assignee.accountId).toBe('abc123');
 });

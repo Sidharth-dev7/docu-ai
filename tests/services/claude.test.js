@@ -56,6 +56,63 @@ test('interpretAnnouncement returns null when product cannot be identified', asy
   expect(result).toBeNull();
 });
 
+test('interpretAnnouncement returns enriched affectedPages with changeType and changeDescription', async () => {
+  mockCreate.mockResolvedValue({
+    content: [{
+      text: JSON.stringify({
+        product: 'Product A',
+        version: '2.1.0',
+        releaseType: 'feature',
+        bugFixes: [],
+        affectedPages: [
+          { name: 'Dashboard', path: '/dashboard', changeType: 'new_feature', changeDescription: 'Added export button' },
+        ],
+      }),
+    }],
+  });
+
+  const result = await interpretAnnouncement('Product A v2.1.0 released', fakeProducts);
+  expect(result.affectedPages[0].changeType).toBe('new_feature');
+  expect(result.affectedPages[0].changeDescription).toBe('Added export button');
+});
+
+test('interpretAnnouncement normalizes plain-string affectedPages to objects', async () => {
+  mockCreate.mockResolvedValue({
+    content: [{
+      text: JSON.stringify({
+        product: 'Product A',
+        version: '1.0.0',
+        releaseType: 'feature',
+        bugFixes: [],
+        affectedPages: ['Settings'],
+      }),
+    }],
+  });
+
+  const result = await interpretAnnouncement('Product A v1.0.0', fakeProducts);
+  expect(result.affectedPages[0].name).toBe('Settings');
+  expect(result.affectedPages[0].changeType).toBe('design_change');
+  expect(result.affectedPages[0].changeDescription).toBe('');
+});
+
+test('interpretAnnouncement normalizes affectedPages objects missing changeType', async () => {
+  mockCreate.mockResolvedValue({
+    content: [{
+      text: JSON.stringify({
+        product: 'Product A',
+        version: '1.0.0',
+        releaseType: 'feature',
+        bugFixes: [],
+        affectedPages: [{ name: 'Billing', path: '/billing' }],
+      }),
+    }],
+  });
+
+  const result = await interpretAnnouncement('Product A v1.0.0', fakeProducts);
+  expect(result.affectedPages[0].changeType).toBe('design_change');
+  expect(result.affectedPages[0].changeDescription).toBe('');
+});
+
 test('generateDraft returns title and content string', async () => {
   mockCreate.mockResolvedValue({
     content: [{
