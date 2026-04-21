@@ -2,7 +2,7 @@ services:
   - type: web
     name: docu-ai
     env: node
-    buildCommand: npm install && npx playwright install chromium --with-deps
+    buildCommand: npm install && npx playwright install chromium
     startCommand: node index.js
     healthCheckPath: /
     envVars:
