@@ -75,18 +75,26 @@ app.message(async ({ message }) => {
     }
 
     const completedSteps = [];
-    const reportProgress = async (stepLabel) => {
+    let currentStep = null;
+    const reportProgress = async (stepLabel, failed = false) => {
       if (!progressTs) return;
       try {
-        completedSteps.push(stepLabel);
-        const completedLines = completedSteps.slice(0, -1).map(s => `✅  ${s}`).join('\n');
-        const body = stepLabel === 'Done'
-          ? completedSteps.map(s => `✅  ${s}`).join('\n')
-          : `${completedLines ? completedLines + '\n' : ''}⏳  ${stepLabel}...`;
+        if (failed) {
+          if (currentStep) { completedSteps.push({ label: currentStep, failed: true }); currentStep = null; }
+        } else if (stepLabel === 'Done') {
+          if (currentStep) completedSteps.push({ label: currentStep, failed: false });
+          currentStep = null;
+          completedSteps.push({ label: 'Done', failed: false });
+        } else {
+          if (currentStep) completedSteps.push({ label: currentStep, failed: false });
+          currentStep = stepLabel;
+        }
+        const lines = completedSteps.map(s => `${s.failed ? '❌' : '✅'}  ${s.label}`);
+        if (currentStep) lines.push(`⏳  ${currentStep}...`);
         await app.client.chat.update({
           channel: NOTIFICATIONS_CHANNEL,
           ts: progressTs,
-          text: `*Docu AI* · preparing draft for *${interpretation.product} v${interpretation.version}*\n${body}`,
+          text: `*Docu AI* · preparing draft for *${interpretation.product} v${interpretation.version}*\n${lines.join('\n')}`,
         });
       } catch (err) {
         console.warn('[Docu AI] Progress update failed (non-fatal):', err.message);

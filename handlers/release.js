@@ -38,6 +38,7 @@ function createReleaseHandler(slackService) {
     try {
       screenshots = await captureScreenshots(config, affectedPages);
     } catch (err) {
+      try { await reportProgress('Capturing screenshots', true); } catch {}
       await slackService.postAlert({
         channel: notificationsChannel,
         message: `screenshot capture failed for ${config.name} v${version}: ${err.message}. Draft will be created without screenshots.`,
@@ -94,17 +95,20 @@ function createReleaseHandler(slackService) {
 
     // Step 6: Upload screenshots as attachments (non-fatal)
     try { await reportProgress('Uploading attachments'); } catch {}
+    let anyUploadFailed = false;
     for (const screenshot of screenshots) {
       try {
         const buffer = Buffer.from(screenshot.base64, 'base64');
         await uploadScreenshot(draftPage.id, `${screenshot.pageName}.png`, buffer);
       } catch (err) {
+        anyUploadFailed = true;
         await slackService.postAlert({
           channel: notificationsChannel,
           message: `Screenshot upload failed for ${screenshot.pageName}: ${err.message}. Draft is at ${draftPage.url}`,
         });
       }
     }
+    if (anyUploadFailed) try { await reportProgress('Uploading attachments', true); } catch {}
 
     // Step 7: Create Jira task (non-fatal)
     try { await reportProgress('Creating Jira task'); } catch {}
@@ -117,6 +121,7 @@ function createReleaseHandler(slackService) {
         assigneeAccountId: config.jiraAssigneeAccountId,
       });
     } catch (err) {
+      try { await reportProgress('Creating Jira task', true); } catch {}
       await slackService.postAlert({
         channel: notificationsChannel,
         message: `Jira task creation failed for ${config.name} v${version}: ${err.message}. Draft is at ${draftPage.url}`,

@@ -101,6 +101,27 @@ If `affectedPages` comes back as flat strings (Claude ignores new schema), wrap 
 
 ---
 
+## Render Deployment (Always-On Hosting)
+
+Socket Mode was added so the bot can run 24/7 without ngrok or a public HTTP endpoint — it maintains a persistent outbound WebSocket connection to Slack.
+
+**`render.yaml`** — defines a `web` service named `docu-ai`:
+- **Build:** `npm install && npx playwright install chromium --with-deps`
+- **Start:** `node index.js`
+- **Health check:** `GET /`
+- All secrets passed as env vars (`sync: false` — set manually in Render dashboard):
+  - `ANTHROPIC_API_KEY`, `SLACK_BOT_TOKEN`, `SLACK_APP_TOKEN`
+  - `SLACK_RELEASES_CHANNEL`, `SLACK_NOTIFICATIONS_CHANNEL`
+  - `CONFLUENCE_BASE_URL`, `CONFLUENCE_EMAIL`, `CONFLUENCE_API_TOKEN`
+  - `JIRA_BASE_URL`, `JIRA_EMAIL`, `JIRA_API_TOKEN`
+  - `PLAYWRIGHT_USERNAME`, `PLAYWRIGHT_PASSWORD` (moved from `products.json` to env)
+
+**Socket Mode requirement:** `SLACK_APP_TOKEN` must be a Slack App-Level Token (starts with `xapp-`). Enable Socket Mode in the Slack app settings and generate this token under *App-Level Tokens* with `connections:write` scope.
+
+**Playwright on Render:** Chromium is installed during build via `npx playwright install chromium --with-deps`. Render's free tier may time out on long pipeline runs (~2 min); use at least the Starter plan for reliable execution.
+
+---
+
 ## Verification
 
 ```bash

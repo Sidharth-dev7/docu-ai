@@ -29,6 +29,13 @@ async function captureScreenshots(productConfig, affectedPages) {
     await page.waitForURL(url => !url.toString().includes('/login'), { timeout: 30000 });
     await page.waitForLoadState('networkidle');
 
+    // Dismiss cookie banner if present
+    const cookieBtn = page.getByRole('button', { name: 'Accept All', exact: true });
+    if (await cookieBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+      await cookieBtn.click();
+      await page.waitForLoadState('networkidle');
+    }
+
     // Capture each affected page using known page paths from config
     const pages = productConfig.pages || {};
     const results = [];
