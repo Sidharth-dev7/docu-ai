@@ -18,6 +18,10 @@ const fakeProductConfig = {
     username: 'ai@company.com',
     password: 'secret',
   },
+  pages: {
+    Settings: '/settings',
+    Billing: '/billing',
+  },
 };
 
 const fakePages = [
@@ -33,6 +37,8 @@ beforeEach(() => {
     fill: jest.fn().mockResolvedValue(null),
     click: jest.fn().mockResolvedValue(null),
     waitForLoadState: jest.fn().mockResolvedValue(null),
+    waitForURL: jest.fn().mockResolvedValue(null),
+    innerText: jest.fn().mockResolvedValue(''),
     screenshot: jest.fn().mockResolvedValue(Buffer.from('fake-png')),
   };
   mockContext = {

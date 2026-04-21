@@ -20,15 +20,25 @@ function createReleaseHandler(slackService) {
    * @param {Object} productConfig - Pre-resolved product config from config/products.json
    * @param {string} version - Version string extracted from the announcement (e.g. "2.1.0")
    * @param {Array<{name, path}>} affectedPages - Pages to screenshot, resolved by interpretAnnouncement
+   * @param {Array<string>} bugFixes - Bug fix descriptions to include in the notification
+   * @param {Function} reportProgress - Optional callback(stepLabel) for live progress updates
    */
-  async function handleRelease(messageText, notificationsChannel, productConfig, version, affectedPages, bugFixes = []) {
+  async function handleRelease(messageText, notificationsChannel, productConfig, version, affectedPages, bugFixes = [], reportProgress = () => {}) {
     const config = productConfig;
+
+    affectedPages = affectedPages.map(p =>
+      typeof p === 'string'
+        ? { name: p, path: '', changeType: 'design_change', changeDescription: '' }
+        : p
+    );
 
     // Step 1: Screenshot capture (non-fatal — pipeline continues on failure)
     let screenshots = [];
+    try { await reportProgress('Capturing screenshots'); } catch {}
     try {
       screenshots = await captureScreenshots(config, affectedPages);
     } catch (err) {
+      try { await reportProgress('Capturing screenshots', true); } catch {}
       await slackService.postAlert({
         channel: notificationsChannel,
         message: `screenshot capture failed for ${config.name} v${version}: ${err.message}. Draft will be created without screenshots.`,
@@ -36,6 +46,7 @@ function createReleaseHandler(slackService) {
     }
 
     // Step 2: Fetch existing article and style samples
+    try { await reportProgress('Fetching Confluence article'); } catch {}
     let existingArticle, styleSamples;
     try {
       existingArticle = await fetchArticle(config.confluenceArticleId);
@@ -49,6 +60,7 @@ function createReleaseHandler(slackService) {
     }
 
     // Step 3: Generate new draft content
+    try { await reportProgress('Generating draft'); } catch {}
     let draft;
     try {
       const stripHtml = html => html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
@@ -72,6 +84,7 @@ function createReleaseHandler(slackService) {
     const highlightedContent = draft.content;
 
     // Step 5: Create Confluence draft page
+    try { await reportProgress('Creating Confluence page'); } catch {}
     const timestamp = new Date().toISOString().slice(0, 16).replace('T', ' ');
     const draftPage = await createDraftPage({
       spaceKey: config.confluenceSpaceKey,
@@ -81,19 +94,24 @@ function createReleaseHandler(slackService) {
     });
 
     // Step 6: Upload screenshots as attachments (non-fatal)
+    try { await reportProgress('Uploading attachments'); } catch {}
+    let anyUploadFailed = false;
     for (const screenshot of screenshots) {
       try {
         const buffer = Buffer.from(screenshot.base64, 'base64');
         await uploadScreenshot(draftPage.id, `${screenshot.pageName}.png`, buffer);
       } catch (err) {
+        anyUploadFailed = true;
         await slackService.postAlert({
           channel: notificationsChannel,
           message: `Screenshot upload failed for ${screenshot.pageName}: ${err.message}. Draft is at ${draftPage.url}`,
         });
       }
     }
+    if (anyUploadFailed) try { await reportProgress('Uploading attachments', true); } catch {}
 
     // Step 7: Create Jira task (non-fatal)
+    try { await reportProgress('Creating Jira task'); } catch {}
     try {
       await createTask({
         productName: config.name,
@@ -103,6 +121,7 @@ function createReleaseHandler(slackService) {
         assigneeAccountId: config.jiraAssigneeAccountId,
       });
     } catch (err) {
+      try { await reportProgress('Creating Jira task', true); } catch {}
       await slackService.postAlert({
         channel: notificationsChannel,
         message: `Jira task creation failed for ${config.name} v${version}: ${err.message}. Draft is at ${draftPage.url}`,
@@ -130,6 +149,7 @@ function createReleaseHandler(slackService) {
       confluenceUrl: draftPage.url,
       bugFixes,
     });
+    try { await reportProgress('Done'); } catch {}
   }
 
   return handleRelease;

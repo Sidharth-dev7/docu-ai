@@ -18,6 +18,7 @@ const handler = createReleaseHandler(mockSlack);
 const NOTIFICATIONS_CHANNEL = 'docs-notifications';
 const FAKE_VERSION = '2.1.0';
 const FAKE_PAGES = [{ name: 'Settings', path: '/settings' }];
+const FAKE_PAGES_ENRICHED = [{ name: 'Settings', path: '/settings', changeType: 'new_feature', changeDescription: 'Added export button' }];
 
 const fakeProduct = {
   name: 'Product A',
@@ -56,8 +57,8 @@ test('runs full pipeline for a valid release message', async () => {
   await handler('Product A v2.1.0 released — updated Settings', NOTIFICATIONS_CHANNEL, fakeProduct, FAKE_VERSION, FAKE_PAGES);
   expect(confluence.createDraftPage).toHaveBeenCalled();
   expect(jira.createTask).toHaveBeenCalled();
-  expect(email.sendDraftEmail).toHaveBeenCalledWith(expect.objectContaining({ to: 'writer@company.com' }));
   expect(mockSlack.postDraftNotification).toHaveBeenCalled();
+  expect(mockSlack.postAlert).not.toHaveBeenCalled();
 });
 
 test('continues pipeline if screenshot capture fails', async () => {
@@ -78,9 +79,9 @@ test('continues pipeline and sends Slack notification if Jira fails', async () =
   }));
 });
 
-test('continues pipeline and sends Slack notification if email fails', async () => {
-  email.sendDraftEmail.mockRejectedValue(new Error('SMTP error'));
+test('does not call email (email step is currently disabled)', async () => {
   await handler('Product A v2.1.0 released — updated Settings', NOTIFICATIONS_CHANNEL, fakeProduct, FAKE_VERSION, FAKE_PAGES);
+  expect(email.sendDraftEmail).not.toHaveBeenCalled();
   expect(mockSlack.postDraftNotification).toHaveBeenCalled();
 });
 
@@ -90,4 +91,23 @@ test('bubbles up error if Confluence page creation fails', async () => {
     handler('Product A v2.1.0 released — updated Settings', NOTIFICATIONS_CHANNEL, fakeProduct, FAKE_VERSION, FAKE_PAGES)
   ).rejects.toThrow('Confluence API 500');
   expect(mockSlack.postDraftNotification).not.toHaveBeenCalled();
+});
+
+test('calls reportProgress for each pipeline step', async () => {
+  const reportProgress = jest.fn().mockResolvedValue();
+  await handler('Product A v2.1.0 released — updated Settings', NOTIFICATIONS_CHANNEL, fakeProduct, FAKE_VERSION, FAKE_PAGES_ENRICHED, [], reportProgress);
+  expect(reportProgress).toHaveBeenCalledWith('Capturing screenshots');
+  expect(reportProgress).toHaveBeenCalledWith('Fetching Confluence article');
+  expect(reportProgress).toHaveBeenCalledWith('Generating draft');
+  expect(reportProgress).toHaveBeenCalledWith('Creating Confluence page');
+  expect(reportProgress).toHaveBeenCalledWith('Uploading attachments');
+  expect(reportProgress).toHaveBeenCalledWith('Creating Jira task');
+  expect(reportProgress).toHaveBeenCalledWith('Done');
+  expect(reportProgress).toHaveBeenCalledTimes(7);
+});
+
+test('continues pipeline if reportProgress throws', async () => {
+  const reportProgress = jest.fn().mockRejectedValue(new Error('Slack update failed'));
+  await handler('Product A v2.1.0 released — updated Settings', NOTIFICATIONS_CHANNEL, fakeProduct, FAKE_VERSION, FAKE_PAGES_ENRICHED, [], reportProgress);
+  expect(mockSlack.postDraftNotification).toHaveBeenCalled();
 });

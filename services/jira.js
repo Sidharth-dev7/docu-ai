@@ -26,6 +26,7 @@ async function createTask({ productName, version, confluenceUrl, projectKey, ass
         }],
       },
       issuetype: { name: 'Asset' },
+      assignee: { accountId: assigneeAccountId },
     },
   };
 
@@ -37,6 +38,7 @@ async function createTask({ productName, version, confluenceUrl, projectKey, ass
       { headers: authHeaders() }
     );
   } catch (err) {
+    console.error('[Docu AI] Jira error status:', err.response?.status);
     console.error('[Docu AI] Jira error response:', JSON.stringify(err.response?.data, null, 2));
     throw err;
   }

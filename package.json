@@ -13,6 +13,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.82.0",
     "@slack/bolt": "^4.6.0",
+    "@slack/socket-mode": "^2.0.6",
     "axios": "^1.14.0",
     "diff": "^8.0.4",
     "dotenv": "^17.4.1",

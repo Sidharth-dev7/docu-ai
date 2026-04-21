@@ -1,5 +1,6 @@
 // docu-ai/index.js
 require('dotenv').config();
+const http = require('http');
 const { App } = require('@slack/bolt');
 const { createSlackService } = require('./services/slack');
 const { createReleaseHandler } = require('./handlers/release');
@@ -8,7 +9,8 @@ const { interpretAnnouncement } = require('./services/claude');
 
 const app = new App({
   token: process.env.SLACK_BOT_TOKEN,
-  signingSecret: process.env.SLACK_SIGNING_SECRET,
+  appToken: process.env.SLACK_APP_TOKEN,
+  socketMode: true,
 });
 
 const slackService = createSlackService(app.client);
@@ -61,7 +63,61 @@ app.message(async ({ message }) => {
       return;
     }
 
-    await handleRelease(messageText, NOTIFICATIONS_CHANNEL, productConfig, interpretation.version, interpretation.affectedPages, interpretation.bugFixes);
+    let progressTs;
+    try {
+      const progressMsg = await app.client.chat.postMessage({
+        channel: NOTIFICATIONS_CHANNEL,
+        text: `*Docu AI* · preparing draft for *${interpretation.product} v${interpretation.version}*\n⏳  Starting pipeline...`,
+      });
+      progressTs = progressMsg.ts;
+    } catch (err) {
+      console.error('[Docu AI] Failed to post progress message:', err.message);
+    }
+
+    const completedSteps = [];
+    let currentStep = null;
+    const reportProgress = async (stepLabel, failed = false) => {
+      if (!progressTs) return;
+      try {
+        if (failed) {
+          if (currentStep) { completedSteps.push({ label: currentStep, failed: true }); currentStep = null; }
+        } else if (stepLabel === 'Done') {
+          if (currentStep) completedSteps.push({ label: currentStep, failed: false });
+          currentStep = null;
+          completedSteps.push({ label: 'Done', failed: false });
+        } else {
+          if (currentStep) completedSteps.push({ label: currentStep, failed: false });
+          currentStep = stepLabel;
+        }
+        const lines = completedSteps.map(s => `${s.failed ? '❌' : '✅'}  ${s.label}`);
+        if (currentStep) lines.push(`⏳  ${currentStep}...`);
+        await app.client.chat.update({
+          channel: NOTIFICATIONS_CHANNEL,
+          ts: progressTs,
+          text: `*Docu AI* · preparing draft for *${interpretation.product} v${interpretation.version}*\n${lines.join('\n')}`,
+        });
+      } catch (err) {
+        console.warn('[Docu AI] Progress update failed (non-fatal):', err.message);
+      }
+    };
+
+    let pipelineFailed = false;
+    try {
+      await handleRelease(messageText, NOTIFICATIONS_CHANNEL, productConfig, interpretation.version, interpretation.affectedPages, interpretation.bugFixes, reportProgress);
+    } catch (err) {
+      pipelineFailed = true;
+      throw err;
+    } finally {
+      if (pipelineFailed && progressTs) {
+        try {
+          await app.client.chat.update({
+            channel: NOTIFICATIONS_CHANNEL,
+            ts: progressTs,
+            text: `*Docu AI* · draft generation failed for *${interpretation.product} v${interpretation.version}* — see alert below`,
+          });
+        } catch {}
+      }
+    }
   } catch (err) {
     console.error('[Docu AI] Pipeline error:', err);
     await slackService.postAlert({
@@ -72,6 +128,9 @@ app.message(async ({ message }) => {
 });
 
 (async () => {
-  await app.start(process.env.PORT || 3000);
-  console.log('[Docu AI] Bot is running on port', process.env.PORT || 3000);
+  await app.start();
+  // Minimal HTTP server for Render health checks
+  http.createServer((req, res) => { res.writeHead(200); res.end('ok'); })
+    .listen(process.env.PORT || 3000);
+  console.log('[Docu AI] Bot is running');
 })();

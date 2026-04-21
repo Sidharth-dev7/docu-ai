@@ -9,8 +9,8 @@
         "usernameSelector": "#email",
         "passwordSelector": "#password",
         "submitSelector": "button[aria-label='Log in']",
-        "username": "docu.aaii@gmail.com",
-        "password": "Mozilor@2026"
+        "username": "",
+        "password": ""
       },
       "pages": {
         "Dashboard": "/dashboard",
@@ -23,7 +23,7 @@
       "confluenceParentId": "533069825",
       "styleSampleIds": ["213024786", "222625805"],
       "jiraProjectKey": "CM",
-      "jiraAssigneeAccountId": "712020:6f8ba21555114eb4a1099b75ed131c59",
+      "jiraAssigneeAccountId": "712020:6f8ba215-5511-4eb4-a109-9b75ed131c59",
       "creatorEmail": ["sidharth@mozilor.com", "saftwana.ta@mozilor.com"]
     },
     {
@@ -35,8 +35,8 @@
         "usernameSelector": "#email",
         "passwordSelector": "#password",
         "submitSelector": "button[aria-label='Log in']",
-        "username": "docu.aaii@gmail.com",
-        "password": "Mozilor@2026"
+        "username": "",
+        "password": ""
       },
       "pages": {
         "Dashboard": "/",
@@ -59,7 +59,7 @@
       "confluenceParentId": "533069825",
       "styleSampleIds": ["199131405", "453378049", "368017409", "458489859", "181927969"],
       "jiraProjectKey": "CM",
-      "jiraAssigneeAccountId": "712020:6f8ba21555114eb4a1099b75ed131c59",
+      "jiraAssigneeAccountId": "712020:6f8ba215-5511-4eb4-a109-9b75ed131c59",
       "creatorEmail": ["sidharth@mozilor.com", "saftwana.ta@mozilor.com"]
     }
   ]
