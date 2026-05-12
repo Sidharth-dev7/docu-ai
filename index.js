@@ -36,7 +36,6 @@ app.message(async ({ message }) => {
     const interpretation = await interpretAnnouncement(messageText, allProducts);
 
     if (!interpretation) {
-      console.log('[Docu AI] interpretAnnouncement returned null');
       await slackService.postAlert({
         channel: NOTIFICATIONS_CHANNEL,
         message: 'Could not identify product from release message — manual review needed.',

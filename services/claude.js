@@ -40,7 +40,7 @@ Release announcement:
 
 Respond ONLY with valid JSON in this exact format:
 {
-  "product": "<product name exactly as listed above, or null if unidentifiable>",
+  "product": "<product name exactly as listed above. If the message mentions a known product with extra qualifiers (e.g. 'WebYes (Suite, A11y)'), return the best matching product name. If both 'WebYes' and 'WebYes Accessibility' are referenced in the same message, always prefer 'WebYes Accessibility'. Only return null if no known product can be inferred at all.>",
   "version": "<version string like 2.1.0, or null>",
   "releaseType": "<'bugfix_only' if the release contains ONLY bug fixes with no new features, otherwise 'feature'>",
   "bugFixes": ["<short description of each bug fix, one per item>"],
@@ -63,7 +63,7 @@ For changeDescription: one concise sentence describing what changed on that spec
     });
   } catch (err) {
     console.error('[Docu AI] Claude API call failed:', err.message);
-    return null;
+    throw new Error(`Claude API call failed: ${err.message}. Check that ANTHROPIC_API_KEY is set correctly.`);
   }
 
   console.log('[Docu AI] Claude raw response:', response.content[0].text);
@@ -73,11 +73,13 @@ For changeDescription: one concise sentence describing what changed on that spec
     const raw = response.content[0].text.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
     parsed = JSON.parse(raw);
   } catch {
-    console.error('[Docu AI] JSON parse failed');
-    return null;
+    console.error('[Docu AI] JSON parse failed. Raw response:', response.content[0].text);
+    throw new Error(`Claude returned unparseable response. Raw: ${response.content[0].text.slice(0, 200)}`);
   }
 
-  if (!parsed.product) return null;
+  if (!parsed.product) {
+    throw new Error(`Claude could not match the release message to any known product. Known products: ${products.map(p => p.name).join(', ')}. Message: "${messageText.slice(0, 100)}"`);
+  }
   const VALID_RELEASE_TYPES = ['bugfix_only', 'feature'];
   parsed.releaseType = VALID_RELEASE_TYPES.includes(parsed.releaseType) ? parsed.releaseType : 'feature';
   parsed.bugFixes = Array.isArray(parsed.bugFixes) ? parsed.bugFixes : [];
