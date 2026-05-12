@@ -16,10 +16,30 @@ function authHeaders() {
 const base = () => `${process.env.CONFLUENCE_BASE_URL}/rest/api/content`;
 
 async function fetchArticle(articleId) {
-  const res = await axios.get(`${base()}/${articleId}`, {
-    headers: authHeaders(),
-    params: { expand: 'body.storage,space' },
-  });
+  let res;
+  try {
+    res = await axios.get(`${base()}/${articleId}`, {
+      headers: authHeaders(),
+      params: { expand: 'body.storage,space' },
+    });
+  } catch (err) {
+    if (err.response?.status === 403) {
+      throw new Error(
+        `403 Forbidden — Confluence credentials are invalid or the bot account lacks access to article ${articleId}. ` +
+        `Check CONFLUENCE_EMAIL and CONFLUENCE_API_TOKEN in .env, or re-grant access to the space.`
+      );
+    }
+    if (err.response?.status === 401) {
+      throw new Error(
+        `401 Unauthorized — Confluence API token is wrong or expired. ` +
+        `Regenerate it at https://id.atlassian.com/manage-profile/security/api-tokens and update CONFLUENCE_API_TOKEN in .env.`
+      );
+    }
+    if (err.response?.status === 404) {
+      throw new Error(`404 Not Found — Confluence article ${articleId} does not exist or has been deleted.`);
+    }
+    throw err;
+  }
   return {
     id: res.data.id,
     title: res.data.title,
